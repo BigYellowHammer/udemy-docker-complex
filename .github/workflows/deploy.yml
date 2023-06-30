@@ -1,0 +1,44 @@
+  name: Deploy Frontend
+  on:
+    push:
+      branches:
+        - master
+
+  jobs:
+    build:
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v2
+        
+        - name: Build test docker image
+          run: docker build -t bigyellowhammer/docker-complex-client-dev -f ./client/Dockerfile.dev ./client
+        
+        - name: Run tests
+          run: docker run -e CI=true bigyellowhammer/docker-complex-client-dev npm run test
+
+        - name: Build prod docker image (client)
+          run: docker build -t bigyellowhammer/docker-complex-client ./client
+
+        - name: Build prod docker image (nginx)
+          run: docker build -t bigyellowhammer/docker-complex-nginx ./nginx
+        
+        - name: Build prod docker image (server)
+          run: docker build -t bigyellowhammer/docker-complex-server ./server
+
+        - name: Build prod docker image (worker)
+          run: docker build -t bigyellowhammer/docker-complex-worker ./worker
+
+        # - name: Generate deployment package
+        #   run: zip -r deploy.zip . -x '*.git*'
+        
+        # - name: Deploy to AWS Elasticbeanstalk
+        #   uses: einaregilsson/beanstalk-deploy@v21
+        #   with:
+        #     aws_access_key: ${{ secrets.AWS_ACCESS_KEY }}
+        #     aws_secret_key: ${{ secrets.AWS_SECRET_KEY }}
+        #     application_name: FirstReactApp
+        #     environment_name: FirstReactApp-env
+        #     existing_bucket_name: elasticbeanstalk-us-east-1-495531827909
+        #     region: us-east-1
+        #     version_label: ${{ github.sha}}
+        #     deployment_package: deploy.zip
