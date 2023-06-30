@@ -9,6 +9,12 @@
       runs-on: ubuntu-latest
       steps:
         - uses: actions/checkout@v2
+
+        - name: Log in to Docker Hub
+          uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
+          with:
+            username: ${{ secrets.DOCKER_USERNAME }}
+            password: ${{ secrets.DOCKER_PASSWORD }}
         
         - name: Build test docker image
           run: docker build -t bigyellowhammer/docker-complex-client-dev -f ./client/Dockerfile.dev ./client
@@ -28,16 +34,28 @@
         - name: Build prod docker image (worker)
           run: docker build -t bigyellowhammer/docker-complex-worker ./worker
 
-        # - name: Generate deployment package
-        #   run: zip -r deploy.zip . -x '*.git*'
+        - name: Publish prod docker image (client)
+          run: docker push bigyellowhammer/docker-complex-client
+        
+        - name: Publish prod docker image (nginx)
+          run: docker push bigyellowhammer/docker-complex-nginx
+        
+        - name: Publish prod docker image (server)
+          run: docker push bigyellowhammer/docker-complex-server
+
+        - name: Publish prod docker image (worker)
+          run: docker push bigyellowhammer/docker-complex-worker
+
+        - name: Generate deployment package
+          run: zip -r deploy.zip . -x '*.git*'
         
         # - name: Deploy to AWS Elasticbeanstalk
         #   uses: einaregilsson/beanstalk-deploy@v21
         #   with:
         #     aws_access_key: ${{ secrets.AWS_ACCESS_KEY }}
         #     aws_secret_key: ${{ secrets.AWS_SECRET_KEY }}
-        #     application_name: FirstReactApp
-        #     environment_name: FirstReactApp-env
+        #     application_name: multi-gh
+        #     environment_name: Multigh-env
         #     existing_bucket_name: elasticbeanstalk-us-east-1-495531827909
         #     region: us-east-1
         #     version_label: ${{ github.sha}}
