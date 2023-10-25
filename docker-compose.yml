@@ -1,14 +1,12 @@
-version: "3"
+version: '3'
 services:
-  nginx:
-    image: bigyellowhammer/docker-complex-nginx
+  client:
+    image: 'rallycoding/multi-client'
     mem_limit: 128m
-    hostname: nginx
-    ports:
-      - "80:80"
+    hostname: client
   server:
-    image: bigyellowhammer/docker-complex-server
-    mem_limit: 128m,
+    image: 'rallycoding/multi-server'
+    mem_limit: 128m
     hostname: api
     environment:
       - REDIS_HOST=$REDIS_HOST
@@ -18,14 +16,16 @@ services:
       - PGDATABASE=$PGDATABASE
       - PGPASSWORD=$PGPASSWORD
       - PGPORT=$PGPORT
-  client:
-    image: "bigyellowhammer/docker-complex-client"
-    mem_limit: 128m
-    hostname: client
   worker:
-    image: "bigyellowhammer/docker-complex-worker"
+    image: 'rallycoding/multi-worker'
     mem_limit: 128m
     hostname: worker
     environment:
       - REDIS_HOST=$REDIS_HOST
       - REDIS_PORT=$REDIS_PORT
+  nginx:
+    image: 'rallycoding/multi-nginx'
+    mem_limit: 128m
+    hostname: nginx
+    ports:
+      - '80:80'
