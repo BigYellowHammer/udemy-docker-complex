@@ -3,6 +3,8 @@
     push:
       branches:
         - main
+  env:
+    SHA: $(git rev-parse HEAD)
 
   jobs:
     build:
@@ -19,32 +21,56 @@
         - name: Run tests
           run: docker run -e CI=true bigyellowhammer/docker-complex-client-dev npm run test
 
-        - name: Build prod docker image (client)
-          run: docker build -t bigyellowhammer/docker-complex-client ./client
-
-        - name: Build prod docker image (nginx)
-          run: docker build -t bigyellowhammer/docker-complex-nginx ./nginx
+        - name: Set Service Key
+          uses: 'google-github-actions/auth@v0'
+          with: 
+            credentials_json: '${{ secrets.GKE_SA_KEY}}'
         
-        - name: Build prod docker image (server)
-          run: docker build -t bigyellowhammer/docker-complex-server ./server
+        - name: Set Project
+          uses: google-github-actions/setup-gcloud@v0
+          with:
+            project_id: multi-k8s-403116
 
-        - name: Build prod docker image (worker)
-          run: docker build -t bigyellowhammer/docker-complex-worker ./worker
-
-        - name: Publish prod docker image (client)
-          run: docker push bigyellowhammer/docker-complex-client
+        - name: Auth
+          run : gcloud --quiet auth configure-docker
         
-        - name: Publish prod docker image (nginx)
-          run: docker push bigyellowhammer/docker-complex-nginx
+        - name: Get Credentials
+          uses: google-github-actions/get-gke-credentails@v0
+          with:
+            cluster_name: multi-cluster
+            location: us-central1-c
+
+        - name: Build and Deploy
+          run: |
+            bash ${GITHUB_WORKSPACE}/deploy.sh
+
+        # - name: Build prod docker image (client)
+        #   run: docker build -t bigyellowhammer/docker-complex-client ./client
         
-        - name: Publish prod docker image (server)
-          run: docker push bigyellowhammer/docker-complex-server
+        # - name: Build prod docker image (server)
+        #   run: docker build -t bigyellowhammer/docker-complex-server ./server
 
-        - name: Publish prod docker image (worker)
-          run: docker push bigyellowhammer/docker-complex-worker
+        # - name: Build prod docker image (worker)
+        #   run: docker build -t bigyellowhammer/docker-complex-worker ./worker
 
-        - name: Generate deployment package
-          run: zip -r deploy.zip . -x '*.git*'
+        # - name: Publish prod docker image (client)
+        #   run: docker push bigyellowhammer/docker-complex-client
+        
+        # - name: Publish prod docker image (server)
+        #   run: docker push bigyellowhammer/docker-complex-server
+
+        # - name: Publish prod docker image (worker)
+        #   run: docker push bigyellowhammer/docker-complex-worker
+
+        - name: Apply
+          run: |-
+            kubectl apply -f k8s
+            kubectl set image deployments/server-deployment server=bigyellowhammer/docker-complex-server::${{ env.SHA }}
+            kubectl set image deployments/client-deployment client=bigyellowhammer/docker-complex-client::${{ env.SHA }}
+            kubectl set image deployments/worker-deployment worker=bigyellowhammer/docker-complex-worker::${{ env.SHA }}
+
+        # - name: Generate deployment package
+        #   run: zip -r deploy.zip . -x '*.git*'
         
         # - name: Deploy to AWS Elasticbeanstalk
         #   uses: einaregilsson/beanstalk-deploy@v21
