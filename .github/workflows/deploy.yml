@@ -66,9 +66,9 @@
         - name: Apply
           run: |-
             kubectl apply -f k8s
-            kubectl set image deployments/server-deployment server=bigyellowhammer/docker-complex-server::${{ env.SHA }}
-            kubectl set image deployments/client-deployment client=bigyellowhammer/docker-complex-client::${{ env.SHA }}
-            kubectl set image deployments/worker-deployment worker=bigyellowhammer/docker-complex-worker::${{ env.SHA }}
+            kubectl set image deployments/server-deployment server=bigyellowhammer/docker-complex-server:${{ env.SHA }}
+            kubectl set image deployments/client-deployment client=bigyellowhammer/docker-complex-client:${{ env.SHA }}
+            kubectl set image deployments/worker-deployment worker=bigyellowhammer/docker-complex-worker:${{ env.SHA }}
 
         # - name: Generate deployment package
         #   run: zip -r deploy.zip . -x '*.git*'
